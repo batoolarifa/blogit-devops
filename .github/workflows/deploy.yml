@@ -13,79 +13,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Debug GitHub Secrets
-      - name: Debug Docker Hub Secrets
+      # 1. Clean and validate Docker Hub username
+      - name: Prepare Docker Hub credentials
+        id: docker-vars
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "Checking Docker Hub secrets..."
+          CLEAN_USERNAME=$(printf '%s' "$DOCKER_USERNAME" | tr -d '[:space:]')
 
-          if [ -z "$DOCKER_USERNAME" ]; then
-            echo "ERROR: DOCKER_USERNAME is EMPTY or unavailable!"
+          if [ -z "$CLEAN_USERNAME" ]; then
+            echo "ERROR: Docker username is empty!"
             exit 1
-          else
-            echo "SUCCESS: DOCKER_USERNAME is configured."
           fi
 
           if [ -z "$DOCKER_PASSWORD" ]; then
-            echo "ERROR: DOCKER_PASSWORD is EMPTY or unavailable!"
+            echo "ERROR: Docker password is empty!"
             exit 1
-          else
-            echo "SUCCESS: DOCKER_PASSWORD is configured."
           fi
 
-      # 3. Set up Docker Buildx
+          echo "username=$CLEAN_USERNAME" >> "$GITHUB_OUTPUT"
+
+          echo "Docker username configured."
+          echo "Username length: ${#CLEAN_USERNAME} characters."
+          echo "Credentials validation passed."
+
+      # 2. Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 4. Login to Docker Hub
+      # 3. Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: ${{ steps.docker-vars.outputs.username }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 5. Validate Docker image tags
-      - name: Validate Docker Image Tags
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          echo "Validating image names..."
-
-          BACKEND_IMAGE="${DOCKER_USERNAME}/blogit-backend"
-          FRONTEND_IMAGE="${DOCKER_USERNAME}/blogit-frontend"
-
-          if [ -z "$DOCKER_USERNAME" ]; then
-            echo "ERROR: Docker username is missing!"
-            exit 1
-          fi
-
-          echo "Backend image: ${BACKEND_IMAGE}:latest"
-          echo "Backend image: ${BACKEND_IMAGE}:${IMAGE_TAG}"
-          echo "Frontend image: ${FRONTEND_IMAGE}:latest"
-          echo "Frontend image: ${FRONTEND_IMAGE}:${IMAGE_TAG}"
-
-          docker image tag hello-world "${BACKEND_IMAGE}:debug-test" 2>/dev/null || true
-
-          echo "Image tag variables validated."
-
-      # 6. Build and Push Backend
+      # 4. Build and Push Backend
       - name: Build and Push Backend
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/blogit-backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/blogit-backend:${{ github.sha }}
+            ${{ steps.docker-vars.outputs.username }}/blogit-backend:latest
+            ${{ steps.docker-vars.outputs.username }}/blogit-backend:${{ github.sha }}
 
-      # 7. Build and Push Frontend
+      # 5. Build and Push Frontend
       - name: Build and Push Frontend
         uses: docker/build-push-action@v6
         with:
@@ -94,5 +71,5 @@ jobs:
           build-args: |
             VITE_API_BASE_URL=/api/v1
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/blogit-frontend:latest
-            ${{ secrets.DOCKER_USERNAME }}/blogit-frontend:${{ github.sha }}
+            ${{ steps.docker-vars.outputs.username }}/blogit-frontend:latest
+            ${{ steps.docker-vars.outputs.username }}/blogit-frontend:${{ github.sha }}
