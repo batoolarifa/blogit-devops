@@ -1,6 +1,6 @@
 import {apiSlice} from "./apiSlice";
 
-const BLOGS_URL = '/api/v1/blogs';
+const BLOGS_URL = '/blogs';
 
 
 export const blogsApiSlice = apiSlice.injectEndpoints({

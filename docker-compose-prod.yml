@@ -1,0 +1,17 @@
+
+services:
+  backend:
+    image: ${DOCKER_USERNAME:?DOCKER_USERNAME is required}/blogit-backend:latest
+    env_file:
+      - ./backend/.env
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  frontend:
+    image: ${DOCKER_USERNAME:?DOCKER_USERNAME is required}/blogit-frontend:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

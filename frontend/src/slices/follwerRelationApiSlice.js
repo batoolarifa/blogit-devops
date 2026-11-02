@@ -1,6 +1,6 @@
 import {apiSlice} from "./apiSlice";
 
-const FOLLOWERSHIP_URL = '/api/v1/followership';
+const FOLLOWERSHIP_URL = '/followership';
 
 
 export const followerRelationApiSlice = apiSlice.injectEndpoints({
