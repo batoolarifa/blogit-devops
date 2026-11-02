@@ -16,6 +16,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Diagnose Docker Hub Username
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "Checking username..."
+          echo "Username length: ${#DOCKER_USERNAME}"
+
+          if [[ "$DOCKER_USERNAME" =~ $'\n' ]]; then
+            echo "FOUND: Newline character"
+          fi
+
+          if [[ "$DOCKER_USERNAME" =~ $'\r' ]]; then
+            echo "FOUND: Carriage return character"
+          fi
+
+          if [[ "$DOCKER_USERNAME" =~ ^[[:space:]] ]]; then
+            echo "FOUND: Leading whitespace"
+          fi
+
+          if [[ "$DOCKER_USERNAME" =~ [[:space:]]$ ]]; then
+            echo "FOUND: Trailing whitespace"
+          fi
+
+          CLEAN_USERNAME=$(printf '%s' "$DOCKER_USERNAME" | tr -d '[:space:]')
+
+          if [ "$DOCKER_USERNAME" != "$CLEAN_USERNAME" ]; then
+            echo "CONFIRMED: Username contains whitespace"
+          else
+            echo "No whitespace detected in username"
+          fi
+
+          echo "Checking password..."
+          if [ -n "$DOCKER_PASSWORD" ]; then
+            echo "Password is configured: YES"
+          else
+            echo "Password is configured: NO"
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
