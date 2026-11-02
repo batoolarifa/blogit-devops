@@ -1,70 +1,39 @@
 
-name: Build and Push Docker Images
+name: BlogIt CI/CD Pipeline
 
 on:
+  # Run the pipeline whenever changes are pushed to main
   push:
     branches:
       - main
 
+  # Allow the pipeline to be triggered manually from GitHub Actions
   workflow_dispatch:
 
 jobs:
-  docker:
+  # Current CI stage: build and publish Docker images
+  build-and-push:
+    name: Build and Push Images
     runs-on: ubuntu-latest
 
     steps:
+      # Get the latest repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Diagnose Docker Hub Username
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          echo "Checking username..."
-          echo "Username length: ${#DOCKER_USERNAME}"
-
-          if [[ "$DOCKER_USERNAME" =~ $'\n' ]]; then
-            echo "FOUND: Newline character"
-          fi
-
-          if [[ "$DOCKER_USERNAME" =~ $'\r' ]]; then
-            echo "FOUND: Carriage return character"
-          fi
-
-          if [[ "$DOCKER_USERNAME" =~ ^[[:space:]] ]]; then
-            echo "FOUND: Leading whitespace"
-          fi
-
-          if [[ "$DOCKER_USERNAME" =~ [[:space:]]$ ]]; then
-            echo "FOUND: Trailing whitespace"
-          fi
-
-          CLEAN_USERNAME=$(printf '%s' "$DOCKER_USERNAME" | tr -d '[:space:]')
-
-          if [ "$DOCKER_USERNAME" != "$CLEAN_USERNAME" ]; then
-            echo "CONFIRMED: Username contains whitespace"
-          else
-            echo "No whitespace detected in username"
-          fi
-
-          echo "Checking password..."
-          if [ -n "$DOCKER_PASSWORD" ]; then
-            echo "Password is configured: YES"
-          else
-            echo "Password is configured: NO"
-          fi
-
+      # Configure Docker Buildx for image building
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Authenticate with Docker Hub using GitHub repository secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Backend
+      # Build the backend image and push latest and commit-specific tags
+      - name: Build and Push Backend Image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
@@ -73,7 +42,8 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/blogit-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/blogit-backend:${{ github.sha }}
 
-      - name: Build and Push Frontend
+      # Build the frontend image and push latest and commit-specific tags
+      - name: Build and Push Frontend Image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
@@ -83,3 +53,4 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/blogit-frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/blogit-frontend:${{ github.sha }}
+
