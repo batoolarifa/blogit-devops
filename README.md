@@ -18,7 +18,7 @@ Whenever changes are pushed to the `main` branch, the pipeline builds updated Do
 
 The application uses a two-container architecture. Nginx serves the React frontend and acts as a reverse proxy for backend API requests.
 
-### Application Architecture
+## Application Architecture
 
 ```mermaid
 flowchart TD
@@ -33,21 +33,12 @@ flowchart TD
     end
 ```
 
-### CI/CD Architecture
+## CI/CD Architecture
 
-```mermaid
-flowchart TD
-    A["Developer"] --> B["Push to GitHub"]
-    B --> C["GitHub Actions"]
-    C --> D["Build Frontend Image"]
-    C --> E["Build Backend Image"]
-    D --> F["Docker Hub"]
-    E --> F
-    F --> G["SSH Connection to AWS EC2"]
-    G --> H["Pull Updated Images"]
-    H --> I["Docker Compose"]
-    I --> J["Updated Containers Running"]
-```
+<p align="center">
+  <img src="docs/screenshots/cicd-architecture.png" alt="CI/CD Pipeline Architecture" width="900" />
+</p>
+
 
 ## Technology Stack
 
@@ -78,6 +69,7 @@ blogit-devops/
 │   └── nginx.conf
 ├── docs/
 │   └── screenshots/
+│       ├── cicd-architecture.png
 │       ├── github-actions-success.png
 │       ├── application-before.png
 │       ├── application-after.png
